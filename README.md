@@ -11,7 +11,7 @@
 
 ## Configuration Files
 ### Run_info.in
-- New pileup histogram for UL are:
+- New pileup histogram names for UL are:
   - MC
      - 2016 preVFP: mc2016preVFP_pileup_20UL16.root, postVFP: mc2016postVFP_pileup_20UL16.root
      - 2017: mc2017_pileup_20UL17.root
@@ -33,6 +33,5 @@
 ## Notes on Merging 2016 Pre/Post VFP Runs
 - Resulting MC ROOT files from pre/post VFP 2016 runs should not be merged with hadd before running through the Plotter because they are not normalized to appropriate proportion of luminosity. 
 - Data ROOT files can be merged with hadd.
-- Functionality to add this tag is implemented in add_root_files_2016.py script included in UL analyzer repository (must be moved to NanoAOD_Submission) by using the flags –a to add “_preVFP” (a for APV) or –n to add “_postVFP” (n for non-APV) when adding files from analyzer run.
 
 
