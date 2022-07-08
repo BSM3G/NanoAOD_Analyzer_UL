@@ -4319,14 +4319,14 @@ double Analyzer::getZBoostWeight(){
     if(active_part->at(CUTS::eGW)->size() ==1){
       boostz = _Gen->pt(active_part->at(CUTS::eGW)->at(0));
     }
-    if(boostz > 0 && boostz <= 50) {boostweigth = 1.1192;}
-    else if (boostz > 50 && boostz <= 100) {boostweigth = 1.1034;}
-    else if (boostz > 100 && boostz <= 150) {boostweigth = 1.0675;}
-    else if (boostz > 150 && boostz <= 200) {boostweigth = 1.0637;}
-    else if (boostz > 200 && boostz <= 300) {boostweigth = 1.0242;}
-    else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9453;}
-    else if (boostz > 400 && boostz <= 600) {boostweigth = 0.8579;}
-    else if (boostz >= 600) {boostweigth = 0.7822;}
+    if(boostz > 0 && boostz <= 50) {boostweigth = 1.0402;}
+    else if (boostz > 50 && boostz <= 100) {boostweigth = 1.0382;}
+    else if (boostz > 100 && boostz <= 150) {boostweigth = 0.9871;}
+    else if (boostz > 150 && boostz <= 200) {boostweigth = 0.9928;}
+    else if (boostz > 200 && boostz <= 300) {boostweigth = 0.9468;}
+    else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9275;}
+    else if (boostz > 400 && boostz <= 600) {boostweigth = 0.9187;}
+    else if (boostz >= 600) {boostweigth = 0.7692;}
     else {boostweigth = 1;}
   }
   return boostweigth;
@@ -4344,36 +4344,36 @@ ize() ==1)){
       boostz = _Gen->pt(active_part->at(CUTS::eGW)->at(0));
     }
     if (ud == 0){
-      if(boostz > 0 && boostz <= 50) {boostweigth = 1.1192;}// 1.0942, 1.1192, 1.1442 5.26
-      else if (boostz > 50 && boostz <= 100) {boostweigth = 1.1034;}// 1.0901, 1.1034, 1.1167
-      else if (boostz > 100 && boostz <= 150) {boostweigth = 1.0675;}// 1.0559, 1.0675, 1.0791
-      else if (boostz > 150 && boostz <= 200) {boostweigth = 1.0637;}// 1.0511, 1.0637, 1.0763
-      else if (boostz > 200 && boostz <= 300) {boostweigth = 1.0242;}// 1.011, 1.0242, 1.0374
-      else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9453;}// 0.9269, 0.9453, 0.9637
-      else if (boostz > 400 && boostz <= 600) {boostweigth = 0.8579;}// 0.8302, 0.8579, 0.8856
-      else if (boostz >= 600) {boostweigth = 0.7822;}// 0.6692, 0.7822, 0.8952
+      if(boostz > 0 && boostz <= 50) {boostweigth = 1.0402;}// 1.0942, 1.1192, 1.1442 5.26
+      else if (boostz > 50 && boostz <= 100) {boostweigth = 1.0382;}// 1.0901, 1.1034, 1.1167
+      else if (boostz > 100 && boostz <= 150) {boostweigth = 0.9871;}// 1.0559, 1.0675, 1.0791
+      else if (boostz > 150 && boostz <= 200) {boostweigth = 0.9928;}// 1.0511, 1.0637, 1.0763
+      else if (boostz > 200 && boostz <= 300) {boostweigth = 0.9468;}// 1.011, 1.0242, 1.0374
+      else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9275;}// 0.9269, 0.9453, 0.9637
+      else if (boostz > 400 && boostz <= 600) {boostweigth = 0.9187;}// 0.8302, 0.8579, 0.8856
+      else if (boostz >= 600) {boostweigth = 0.7692 ;}// 0.6692, 0.7822, 0.8952
       else {boostweigth = 1;}}
 
     else if (ud == -1){
-      if(boostz > 0 && boostz <= 50) {boostweigth = 1.0942;}// 1.0942, 1.1192, 1.1442 5.26
-      else if (boostz > 50 && boostz <= 100) {boostweigth = 1.0901;}// 1.0901, 1.1034, 1.1167
-      else if (boostz > 100 && boostz <= 150) {boostweigth = 1.0559;}// 1.0559, 1.0675, 1.0791
-      else if (boostz > 150 && boostz <= 200) {boostweigth = 1.0511;}// 1.0511, 1.0637, 1.0763
-      else if (boostz > 200 && boostz <= 300) {boostweigth = 1.011;}// 1.011, 1.0242, 1.0374
-      else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9269;}// 0.9269, 0.9453, 0.9637
-      else if (boostz > 400 && boostz <= 600) {boostweigth = 0.8302;}// 0.8302, 0.8579, 0.8856
-      else if (boostz >= 600) {boostweigth = 0.6692;}// 0.6692, 0.7822, 0.8952
+      if(boostz > 0 && boostz <= 50) {boostweigth = 1.0339;}// 1.0942, 1.1192, 1.1442 5.26
+      else if (boostz > 50 && boostz <= 100) {boostweigth = 1.0332;}// 1.0901, 1.1034, 1.1167
+      else if (boostz > 100 && boostz <= 150) {boostweigth = 0.9837;}// 1.0559, 1.0675, 1.0791
+      else if (boostz > 150 && boostz <= 200) {boostweigth = 0.9881;}// 1.0511, 1.0637, 1.0763
+      else if (boostz > 200 && boostz <= 300) {boostweigth = 0.9413;}// 1.011, 1.0242, 1.0374
+      else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9158;}// 0.9269, 0.9453, 0.9637
+      else if (boostz > 400 && boostz <= 600) {boostweigth = 0.8993;}// 0.8302, 0.8579, 0.8856
+      else if (boostz >= 600) {boostweigth = 0.7083;}// 0.6692, 0.7822, 0.8952
       else {boostweigth = 1;}}
 
     else if (ud == 1){
-      if(boostz > 0 && boostz <= 50) {boostweigth = 1.1442;}// 1.0942, 1.1192, 1.1442 5.26
-      else if (boostz > 50 && boostz <= 100) {boostweigth = 1.1167;}// 1.0901, 1.1034, 1.1167
-      else if (boostz > 100 && boostz <= 150) {boostweigth = 1.0791;}// 1.0559, 1.0675, 1.0791
-      else if (boostz > 150 && boostz <= 200) {boostweigth = 1.0763;}// 1.0511, 1.0637, 1.0763
-      else if (boostz > 200 && boostz <= 300) {boostweigth = 1.0374;}// 1.011, 1.0242, 1.0374
-      else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9637;}// 0.9269, 0.9453, 0.9637
-      else if (boostz > 400 && boostz <= 600) {boostweigth = 0.8856;}// 0.8302, 0.8579, 0.8856
-      else if (boostz >= 600) {boostweigth = 0.8952;}// 0.6692, 0.7822, 0.8952
+      if(boostz > 0 && boostz <= 50) {boostweigth = 1.0464;}// 1.0942, 1.1192, 1.1442 5.26
+      else if (boostz > 50 && boostz <= 100) {boostweigth = 1.0428;}// 1.0901, 1.1034, 1.1167
+      else if (boostz > 100 && boostz <= 150) {boostweigth = 0.9905;}// 1.0559, 1.0675, 1.0791
+      else if (boostz > 150 && boostz <= 200) {boostweigth = 0.9975;}// 1.0511, 1.0637, 1.0763
+      else if (boostz > 200 && boostz <= 300) {boostweigth = 0.9523;}// 1.011, 1.0242, 1.0374
+      else if (boostz > 300 && boostz <= 400) {boostweigth = 0.9392;}// 0.9269, 0.9453, 0.9637
+      else if (boostz > 400 && boostz <= 600) {boostweigth = 0.9381;}// 0.8302, 0.8579, 0.8856
+      else if (boostz >= 600) {boostweigth = 0.8301;}// 0.6692, 0.7822, 0.8952
       else {boostweigth = 1;}}
 
   }
@@ -5081,6 +5081,7 @@ void Analyzer::fill_Folder(std::string group, const int max, Histogramer &ihisto
       }
       if(part->type != PType::Jet) {
         histAddVal(calculateLeptonMetMt(part->p4(it)), "MetMt");
+        histAddVal2(part->p4(it).Pt(),calculateLeptonMetMt(part->p4(it)), "MetMtPt2D");
       }
       if(part->type == PType::FatJet ) {
         histAddVal(_FatJet->PrunedMass[it], "PrunedMass");

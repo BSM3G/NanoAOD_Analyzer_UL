@@ -37,7 +37,7 @@ void Systematics::shiftLepton(Lepton& lepton, TLorentzVector recoLep, TLorentzVe
     lepton.addP4Syst(recoLep, syst);
     return;
   }
-  double ratio = ((genLep.Pt()*scale) + (recoLep.Pt() - genLep.Pt())*resolution)/recoLep.Pt();
+  double ratio = scale + (1 - ((genLep.Pt()) / (recoLep.Pt()))) * resolution;
   //cout<<"ratio  "<<ratio<<"  "<<scale<<"  "<<resolution    <<std::endl;
    //add the shifted part up
    dPx+=recoLep.Px()*(ratio-1);
