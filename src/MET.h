@@ -97,8 +97,8 @@ protected:
   float raw_met_phi;
 
   //note this is only for pt and phi
-  double MetUnclUp[2] = {0, 0};
-  double MetUnclDown[2] = {0, 0};
+  float MetUnclUp[2] = {0, 0};
+  float MetUnclDown[2] = {0, 0};
   int Unclup=-1;
   int Uncldown=-1;
   mt2_bisect::mt2 mt2_event;

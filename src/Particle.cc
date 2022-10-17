@@ -401,7 +401,10 @@ Electron::Electron(TTree* _BOOM, std::string filename, std::vector<std::string> 
   auto& elec1 = pstats["Elec1"];
   auto& elec2 = pstats["Elec2"];
 
-  std::bitset<8> tmp(elec1.dmap.at("DiscrByCBID"));
+// Old ElecID variable
+//  std::bitset<8> tmp(elec1.dmap.at("DiscrByCBID"));
+//Dale elec ID variable
+  int tmp = elec1.dmap.at("DiscrByCBID");
   cbIDele1=tmp;
   tmp=elec2.dmap.at("DiscrByCBID");
   cbIDele2=tmp;

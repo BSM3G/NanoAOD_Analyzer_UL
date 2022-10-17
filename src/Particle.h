@@ -243,8 +243,12 @@ public:
 
   bool get_Iso(int, double, double) const;
 
-  std::bitset<8> cbIDele1;
-  std::bitset<8> cbIDele2;
+//  Old elecID variables
+//  std::bitset<8> cbIDele1;
+//  std::bitset<8> cbIDele2;
+//Dale elec ID Variable
+  int cbIDele1;
+  int cbIDele2;
   std::bitset<8> cbHLTIDele1;
   std::bitset<8> cbHLTIDele2;
 
