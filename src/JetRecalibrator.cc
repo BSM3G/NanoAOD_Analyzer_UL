@@ -123,7 +123,8 @@ float JetRecalibrator::getCorrection(TLorentzVector rawjet4vec, float jet_area, 
 				std::cout << "Caught " << err.what() << " when getting uncertainty for jet of pt = %.1f" << corr * rawjet4vec.Pt() << ", eta = %.2f" << rawjet4vec.Eta() << std::endl;
 				jetEnergyCorrUncertainty = 0.5;
 			}
-			corr *= std::max(0.0, 1.0+delta+jetEnergyCorrUncertainty);
+			//corr *= std::max(0.0, 1.0+delta+jetEnergyCorrUncertainty);
+                        corr *= std::max(0.0, 1.0+delta*jetEnergyCorrUncertainty); //corrected, Jethro 2022
 		}
 	}
 

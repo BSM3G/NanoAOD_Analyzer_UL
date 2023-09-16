@@ -612,14 +612,15 @@ bool Analyzer::passHEMveto2018(){
   return true;
 
 }
+//////Non-SUSY signal version of skimSignalMC
 
 bool Analyzer::skimSignalMC(int event){
   // Check if we should use this function at all... to be called only for signal samples
   if(! isSignalMC ) return true;
 
   // Construct the name of the branch:
-  std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str();
-
+ // std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str();
+  std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputC1Mass+"_"+inputStauMass+"_"+inputN1Mass+"p00").c_str();
   // std::cout << "Name of the branch: " << signalBranchName << std::endl;
   bool isInputSignal = false;
 
@@ -630,12 +631,53 @@ bool Analyzer::skimSignalMC(int event){
   BOOM->GetEntry(event);
 
   finalInputSignal = isInputSignal;
-
   signalBranch->ResetAddress();
   // std::cout << "Input signal: " << signalBranchName << ", isInputSignal? " << finalInputSignal << std::endl;
   return finalInputSignal;
 }
 
+
+//////SUSY signal version of skimSignalMC that checks gen mass of electroweakino directly, in case signal is not labeled correctly
+/*
+bool Analyzer::skimSignalMC(){
+  // Check if we should use this function at all... to be called only for signal samples
+  if(! isSignalMC ) return true;
+
+  finalInputSignal = true;
+  double epsilon = 0.0001;
+  // This is an extra if in case we're analyzing stau dominated samples, which not always contain a chargino1/neutralino2 particle in the event
+//
+//  if(inputSignalModel.find("Stau") != std::string::npos){
+//    for(unsigned i=0; i < genSUSYPartIndexStau.size(); i++){
+//      if (abs(_Gen->pdg_id[genSUSYPartIndexStau[i]]) == std::stoi(inputStau_pdgID) && (abs(_Gen->mass(genSUSYPartIndexStau[i]) - std::stod(inputStauMass)) > epsilon)){ 
+//        finalInputSignal = false;
+//        break;
+//      }
+//    }
+//  }
+
+/////
+  for (unsigned i=0; i < genSUSYPartIndex.size(); i++){
+
+    if (abs(_Gen->pdg_id[genSUSYPartIndex[i]]) == std::stoi(inputN2_pdgID) && (abs(_Gen->mass(genSUSYPartIndex[i]) - std::stod(inputN2Mass)) > epsilon)){ 
+      finalInputSignal = false;
+      break;
+    }
+
+    if (abs(_Gen->pdg_id[genSUSYPartIndex[i]]) == std::stoi(inputC1_pdgID) && (abs(_Gen->mass(genSUSYPartIndex[i]) - std::stod(inputC1Mass)) > epsilon)){
+      finalInputSignal = false;
+      break;
+    }
+
+    if (abs(_Gen->pdg_id[genSUSYPartIndex[i]]) == std::stoi(inputN1_pdgID) && (abs(_Gen->mass(genSUSYPartIndex[i]) - std::stod(inputN1Mass)) > epsilon)){
+      finalInputSignal = false;
+      break;
+    }
+  }
+
+  return finalInputSignal;
+}
+*/
 ///Function that does most of the work.  Calculates the number of each particle
 void Analyzer::preprocess(int event, std::string year){ // This function no longer needs to get the JSON dictionary as input.
 
@@ -661,6 +703,14 @@ void Analyzer::preprocess(int event, std::string year){ // This function no long
     _GenJet->setOrigReco();
 
     genMotherPartIndex.clear();
+
+////////additional vectors for signal processing/////
+    genSUSYPartIndex.clear();
+    genSUSYPartIndexStau.clear();
+
+    genSUSYPartIndex.shrink_to_fit();
+    genSUSYPartIndexStau.shrink_to_fit();
+//////////////////////////////
 
     getGoodGen(_Gen->pstats["Gen"]);
     getGoodGenHadronicTaus(_GenHadTau->pstats["Gen"]);
@@ -689,7 +739,8 @@ void Analyzer::preprocess(int event, std::string year){ // This function no long
 
      // -- For signal samples -- //
      if(isSignalMC){
-      if(skimSignalMC(event) == false){
+      if(skimSignalMC(event) == false){    //for non-SUSY specific skimSignalMC. Turn on in header file
+//      if(skimSignalMC() == false){        // for SUSY-specific skimSignalMC. Turn on in header file
         clear_values();
         return;
       }
@@ -755,7 +806,10 @@ void Analyzer::preprocess(int event, std::string year){ // This function no long
     smearLepton(*_Muon, CUTS::eGMuon, _Muon->pstats["Smear"], distats["Muon_systematics"], i);
     // smearLepton(*_Tau, CUTS::eGTau, _Tau->pstats["Smear"], distats["Tau_systematics"], i);
     smearTaus(*_Tau, _Tau->pstats["Smear"], distats["Tau_systematics"], i);
+    
 
+    //4-Vector of addition of all nominally corrected jets, to be used in uncl. Met systematics
+    TLorentzVector jetL1L2L3_jer_nom_total;
     applyJetEnergyCorrections(*_Jet,CUTS::eGJet,_Jet->pstats["Smear"], year, i);
     applyJetEnergyCorrections(*_FatJet,CUTS::eGJet,_FatJet->pstats["Smear"], year, i);
     updateMet(i);
@@ -1455,7 +1509,8 @@ void Analyzer::setupGeneral(std::string year) {
 
      if(BOOM->FindBranch("L1PreFiringWeight_Nom") != 0){
        SetBranch("L1PreFiringWeight_Nom", l1prefiringwgt);
-
+      
+     std::cout << "L1 prefiring weight nom: " << l1prefiringwgt << std::endl;
 
        if(distats["Systematics"].bfind("useSystematics")){
          SetBranch("L1PreFiringWeight_Up", l1prefiringwgt_up);
@@ -1593,15 +1648,40 @@ void Analyzer::setupGeneral(std::string year) {
 
   std::cout << " ---------------------------------------------------------------------- " << std::endl;
 
-  // double check
-  if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) == 0){
-   isSignalMC = false;
-   std::cout << "This is not a signal MC sample." << std::endl;
+//  // double check
+//  if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) == 0){
+//   isSignalMC = false;
+//   std::cout << "This is not a signal MC sample." << std::endl;
+//  }
+//  else if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) != 0){
+//   isSignalMC = true;
+//   std::cout << "This is a signal MC sample!" << std::endl;
+//  }
+
+/////////////SUSY signal version of getting isSignalMC
+
+  isSignalMC = false;
+  TObjArray *nameArray = BOOM->GetListOfBranches();
+  std::string prefix = ("GenModel_"+inputSignalModel).c_str();
+  for (int i = 0; i < nameArray->GetEntries(); ++i) {
+    std::string name = nameArray->At(i)->GetName();
+    //std::cout << prefix << std::endl;
+    std::string namePrefix = name.substr(0, prefix.length());
+    if (prefix == namePrefix) {
+      isSignalMC = true;
+      std::cout << "This is a signal MC sample!" << std::endl;
+      std::cout << "" << std::endl;
+      break;
+    } 
   }
-  else if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) != 0){
-   isSignalMC = true;
-   std::cout << "This is a signal MC sample!" << std::endl;
+  if(!isSignalMC){
+    std::cout << "This is not a signal MC sample." << std::endl; 
   }
+
+
+
+
+
   std::cout << " ---------------------------------------------------------------------- " << std::endl;
 }
 
@@ -1720,6 +1800,85 @@ void Analyzer::read_info(std::string filename) {
         }
         continue;
       }
+
+
+////SUSY particles
+
+      if(stemp.at(0).find("C1_pdgID") != std::string::npos){
+        for(auto c1_pdgID: stemp){
+          if(c1_pdgID.find("C1_pdgID") == std::string::npos and "=" != c1_pdgID){
+            inputC1_pdgID = c1_pdgID;
+             std::cout << "C1_pdgID is: " << c1_pdgID << std::endl;
+          }
+        }
+        continue;
+      }
+      if(stemp.at(0).find("C1Mass") != std::string::npos){
+        for(auto c1mass: stemp){
+          if(c1mass.find("C1Mass") == std::string::npos and "=" != c1mass){
+            inputC1Mass = c1mass;
+            std::cout << "C1Mass is: " << c1mass << std::endl;
+          } 
+        }
+        continue;
+      }
+      if(stemp.at(0).find("N2Mass") != std::string::npos){
+        for(auto n2mass: stemp){
+          if(n2mass.find("N2Mass") == std::string::npos and "=" != n2mass){
+            inputN2Mass = n2mass;
+            std::cout << "N2Mass is: " << n2mass << std::endl;
+          }
+        }
+        continue;
+      }
+      if(stemp.at(0).find("N2_pdgID") != std::string::npos){
+        for(auto n2_pdgID: stemp){
+          if(n2_pdgID.find("N2_pdgID") == std::string::npos and "=" != n2_pdgID){
+            inputN2_pdgID = n2_pdgID;
+            std::cout << "N2_pdgID is: " << n2_pdgID << std::endl;
+          }
+        }
+        continue;
+      }
+      if(stemp.at(0).find("N1Mass") != std::string::npos){
+        for(auto n1mass: stemp){
+          if(n1mass.find("N1Mass") == std::string::npos and "=" != n1mass){
+            inputN1Mass = n1mass;
+            std::cout << "N1Mass is: " << n1mass << std::endl;
+          }
+        }
+        continue;
+      }
+      if(stemp.at(0).find("N1_pdgID") != std::string::npos){
+        for(auto n1_pdgID: stemp){
+          if(n1_pdgID.find("N1_pdgID") == std::string::npos and "=" != n1_pdgID){
+            inputN1_pdgID = n1_pdgID;
+             std::cout << "N1_pdgID is: " << n1_pdgID << std::endl;
+          }
+        }
+        continue;
+      }
+      if(stemp.at(0).find("StauMass") != std::string::npos){
+        for(auto staumass: stemp){
+          if(staumass.find("StauMass") == std::string::npos and "=" != staumass){
+            inputStauMass = staumass;
+            std::cout << "StauMass is: " << staumass << std::endl;
+          }
+        }
+        continue;
+      }
+      if(stemp.at(0).find("Stau_pdgID") != std::string::npos){
+        for(auto stau_pdgID: stemp){
+          if(stau_pdgID.find("Stau_pdgID") == std::string::npos and "=" != stau_pdgID){
+            inputStau_pdgID = stau_pdgID;
+            std::cout << "Stau_pdgID is: " << stau_pdgID << std::endl;
+          }
+        }
+        continue;
+      }
+
+//////////////End SUSY particles
+
     } else if(stemp.size() == 3 and stemp.at(0).find("Trigger") == std::string::npos){
       distats[group].pmap[stemp[0]] = std::make_pair(std::stod(stemp[1]), std::stod(stemp[2]));
     } else{
@@ -2047,6 +2206,9 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
   maxjetptprojonmet_plus_formet = 0.0, maxjetptprojonmet_minus_formet = 0.0;
   index_minjmetdphi_formet = -1, index_maxjmetdphi_formet = -1;
   index_maxjetptprojonmet_plus_formet = -1, index_maxjetptprojonmet_minus_formet = -1;
+  
+  //4-vector of total of corrected jets for uncl energy calculation
+  //TLorentzVector total_jetL1L2L3_jer_nom(0,0,0,0);
 
   for(size_t i = 0; i < jet.size(); i++){
 
@@ -2079,33 +2241,28 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
     double jecL1L2L3 = jetRecalib.getCorrection(rawJetP4_noMuon, _Jet->area[i], jec_rho);
     double jecL1 = jetRecalibL1.getCorrection(rawJetP4_noMuon, _Jet->area[i], jec_rho);
 
+    //systematics for JEC via JetRecalibrator
+    if(systname == "Jet_Scale_Up"){
+      jecL1L2L3 = jetRecalib.getCorrection(rawJetP4_noMuon, _Jet->area[i], jec_rho, 1.0);
+      jecL1 = jetRecalibL1.getCorrection(rawJetP4_noMuon, _Jet->area[i], jec_rho, 1.0);
+
+    }
+    else if(systname == "Jet_Scale_Down"){
+      jecL1L2L3 = jetRecalib.getCorrection(rawJetP4_noMuon, _Jet->area[i], jec_rho, -1.0);
+      jecL1 = jetRecalibL1.getCorrection(rawJetP4_noMuon, _Jet->area[i], jec_rho, -1.0);
+
+    }
     // Step 4: check if the jet pt of the corrected raw jet pt with L123 corrections is above the unclustered energy threshold.
     TLorentzVector jetL1L2L3_noMuonP4(0,0,0,0);
     TLorentzVector jetL1_noMuonP4(0,0,0,0);
 
-    if(year.compare("2017") != 0){
-      // For 2016 and 2018, apply the corrections as usual
-      if( jecL1L2L3 * rawJetP4_noMuon.Pt() > jetUnclEnThreshold){
-        jetL1L2L3_noMuonP4 = jetRecalib.correctedP4(rawJetP4_noMuon, jecL1L2L3); // L1L2L3 correction.
-        jetL1_noMuonP4 = jetRecalibL1.correctedP4(rawJetP4_noMuon, jecL1); // L1 correction
-      } else {
-        jetL1L2L3_noMuonP4 = rawJetP4_noMuon; // no correction.
-        jetL1_noMuonP4 = rawJetP4_noMuon; // no correction
-      }
+      // apply the corrections
+    if( jecL1L2L3 * rawJetP4_noMuon.Pt() > jetUnclEnThreshold){
+      jetL1L2L3_noMuonP4 = jetRecalib.correctedP4(rawJetP4_noMuon, jecL1L2L3); // L1L2L3 correction.
+      jetL1_noMuonP4 = jetRecalibL1.correctedP4(rawJetP4_noMuon, jecL1); // L1 correction
     } else {
-      // This step is only need for v2 MET in 2017, when different JECs are applied compared to the nanoAOD production.
-      // only correct the non-mu momentum of the jet. If the corrected pt > 15 GeV (unclEnThreshold), use the corrected jet, otherwise use raw.
-      if( jecL1L2L3 * rawJetP4_noMuon.Pt() > jetUnclEnThreshold){
-        jetL1L2L3_noMuonP4 = jetRecalib.correctedP4(rawJetP4_noMuon, jecL1L2L3); // L1L2L3 correction.
-      } else {
-        jetL1L2L3_noMuonP4 = rawJetP4_noMuon; // no correction.
-      }
-
-      if( jecL1 * rawJetP4_noMuon.Pt() > jetUnclEnThreshold){
-        jetL1_noMuonP4 = jetRecalibL1.correctedP4(rawJetP4_noMuon, jecL1); // L1 correction
-      } else {
-        jetL1_noMuonP4 = rawJetP4_noMuon; // no correction
-      }
+      jetL1L2L3_noMuonP4 = rawJetP4_noMuon; // no correction.
+      jetL1_noMuonP4 = rawJetP4_noMuon; // no correction
     }
 
     // Step 5 (optional): apply the JER corrections if desired to MC.
@@ -2334,30 +2491,31 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
     jetL1L2L3_jer_noMuon_jesShiftedP4.SetPtEtaPhiM( jetL1L2L3_jerNom_noMuonP4.Pt() * (1.0 + jes_delta), jetL1L2L3_jerNom_noMuonP4.Eta(), jetL1L2L3_jerNom_noMuonP4.Phi(), jetL1L2L3_jerNom_noMuonP4.M() * (1.0 + jes_delta) );
     jetL1L2L3_T1_noMuon_jesShiftedP4.SetPtEtaPhiM( jetL1L2L3_noMuonP4.Pt() * (1.0 + jes_delta_t1), jetL1L2L3_noMuonP4.Eta(), jetL1L2L3_noMuonP4.Phi(), jetL1L2L3_noMuonP4.M() * (1.0 + jes_delta_t1) );
 
-    if(systname.find("_Scale_") != std::string::npos){
-
-      // Here we will be using the mass and pt that were obtained after applying JER corrections
-      jes_delta = jetScaleRes.GetScaleDelta(jetL1L2L3_jerNom_noMuonP4.Pt(), jetL1L2L3_jerNom_noMuonP4.Eta());
-      jes_delta_t1 = jetScaleRes.GetScaleDelta(jetL1L2L3_noMuonP4.Pt(), jetL1L2L3_noMuonP4.Eta());
-
-      // JES applied for systematics both in data and MC.
-      if(systname == "Jet_Scale_Up"){
-        jet_pt_jesShifted = jetL1L2L3_jerNom_noMuonP4.Pt() * (1.0 + jes_delta);
-        jet_mass_jesShifted = jetL1L2L3_jerNom_noMuonP4.M() * (1.0 + jes_delta);
-
-        // If no smearing is applied, just re-do JES variations for T1 MET
-        jet_pt_jesShiftedT1 = jetL1L2L3_noMuonP4.Pt() * (1.0 + jes_delta_t1);
-        jet_mass_jesShiftedT1 = jetL1L2L3_noMuonP4.M() * (1.0 + jes_delta_t1);
-
-      } else if(systname == "Jet_Scale_Down"){
-        jet_pt_jesShifted = jetL1L2L3_jerNom_noMuonP4.Pt() * (1.0 - jes_delta);
-        jet_mass_jesShifted = jetL1L2L3_jerNom_noMuonP4.M() * (1.0 - jes_delta);
-
-        // If no smearing is applied, just re-do JES variations for T1 MET
-        jet_pt_jesShiftedT1 = jetL1L2L3_noMuonP4.Pt() * (1.0 - jes_delta_t1);
-        jet_mass_jesShiftedT1 = jetL1L2L3_noMuonP4.M() * (1.0 - jes_delta_t1);
-      }
-    }
+//    These seem to be systematics on residuals only, replaced with syst. on L123 corrections in corresponding code for now
+//    if(systname.find("_Scale_") != std::string::npos){
+//
+//      // Here we will be using the mass and pt that were obtained after applying JER corrections
+//      jes_delta = jetScaleRes.GetScaleDelta(jetL1L2L3_jerNom_noMuonP4.Pt(), jetL1L2L3_jerNom_noMuonP4.Eta());
+//      jes_delta_t1 = jetScaleRes.GetScaleDelta(jetL1L2L3_noMuonP4.Pt(), jetL1L2L3_noMuonP4.Eta());
+//
+//      // JES applied for systematics both in data and MC.
+//      if(systname == "Jet_Scale_Up"){
+//        jet_pt_jesShifted = jetL1L2L3_jerNom_noMuonP4.Pt() * (1.0 + jes_delta);
+//        jet_mass_jesShifted = jetL1L2L3_jerNom_noMuonP4.M() * (1.0 + jes_delta);
+//
+//        // If no smearing is applied, just re-do JES variations for T1 MET
+//        jet_pt_jesShiftedT1 = jetL1L2L3_noMuonP4.Pt() * (1.0 + jes_delta_t1);
+//        jet_mass_jesShiftedT1 = jetL1L2L3_noMuonP4.M() * (1.0 + jes_delta_t1);
+//
+//      } else if(systname == "Jet_Scale_Down"){
+//        jet_pt_jesShifted = jetL1L2L3_jerNom_noMuonP4.Pt() * (1.0 - jes_delta);
+//        jet_mass_jesShifted = jetL1L2L3_jerNom_noMuonP4.M() * (1.0 - jes_delta);
+//
+//        // If no smearing is applied, just re-do JES variations for T1 MET
+//        jet_pt_jesShiftedT1 = jetL1L2L3_noMuonP4.Pt() * (1.0 - jes_delta_t1);
+//        jet_mass_jesShiftedT1 = jetL1L2L3_noMuonP4.M() * (1.0 - jes_delta_t1);
+//      }
+//    }
 
     // Update the shifted JES vectors accordingly
     jetL1L2L3_jer_noMuon_jesShiftedP4.SetPtEtaPhiM( jet_pt_jesShifted, jetL1L2L3_jerNom_noMuonP4.Eta(), jetL1L2L3_jerNom_noMuonP4.Phi(), jet_mass_jesShifted );
@@ -2384,7 +2542,7 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
         systematics.shiftJet(jet, jetL1L2L3_jerShiftedP4, systname, syst);
     	}
     }
-
+/////////////// Not sure if this is needed, may just be study remnants
     // Study jet pt projections on MET axis for data
     if(isData && (jetL1L2L3_noMuonP4.Pt() > jetUnclEnThreshold) ){
       // study separation of jets from Met
@@ -2516,6 +2674,7 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
         }
       }
     }
+/////////////////////////////// End of potential useless studies
 
     // --------------------- Propagation of JER/JES to MET --------------------- //
 
@@ -2523,7 +2682,11 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
 
     // Propagate JER and JES corrections and uncertainties to MET.
     // Only propagate JECs to MET if the corrected pt without the muon is above the unclustered energy threshold.
+
     if(jetL1L2L3_noMuonP4.Pt() > jetUnclEnThreshold && jetTotalEmEF < 0.9){
+      
+      //sum current jet vector to total correted nominal jet 4-vector and update unclMet
+      // total_jetL1L2L3_jer_nom += jetL1L2L3_jerNomP4;
 
       if(systname.find("orig") != std::string::npos ){
           _MET->propagateJetEnergyCorr(jetL1L2L3_jerNom_noMuonP4, jetL1L2L3_jerNom_noMuonP4.Pt(), jetL1_noMuonP4.Pt(), systname, syst);
@@ -2536,9 +2699,10 @@ void Analyzer::applyJetEnergyCorrections(Particle& jet, const CUTS eGenPos, cons
         }
       }
   }
+  // set correct unclustered energy, may need this for uncl MET systematics
+//  _MET->getUnclEn(total_jetL1L2L3_jer_nom, syst);
 }
 
-    // Propagate "unclustered energy" uncertainty to MET to finalize the 2017 MET recipe v2
 
 // --- Old function that smeares the jet energy resolution: this is done only in MC to improve the agreement between data and MC --- //
 
@@ -2778,12 +2942,24 @@ void Analyzer::getGoodGen(const PartStats& stats) {
   if(! neededCuts.isPresent(CUTS::eGen)) return;
 
   int particle_id = 0;
+  int particle_status = 0;
 
   std::vector<int> intermiedateP4CorrPart;
 
   for(size_t j = 0; j < _Gen->size(); j++) {
 
     particle_id = abs(_Gen->pdg_id[j]);
+    particle_status = _Gen->status[j];
+
+//////For SUSY signal
+
+    if( (particle_id == std::stoi(inputN2_pdgID) && particle_status == 62) || (particle_id == std::stoi(inputC1_pdgID) && particle_status == 62) || (particle_id == std::stoi(inputN1_pdgID) && particle_status == 1) ){
+      genSUSYPartIndex.push_back(j);
+    } else if( particle_id == std::stoi(inputStau_pdgID) && (particle_status == 62 || particle_status == 22) ){
+      genSUSYPartIndexStau.push_back(j);
+    }
+
+///////////
 
     if( (particle_id < 5 || particle_id == 9 || particle_id == 21) && genMaper.find(particle_id) != genMaper.end() && _Gen->status[j] == genMaper.at(5)->status){
       active_part->at(genMaper.at(5)->ePos)->push_back(j);
@@ -3083,9 +3259,9 @@ void Analyzer::getGoodRecoLeptons(const Lepton& lep, const CUTS ePos, const CUTS
           // passCuts = passCuts && passProng(stats.smap.at("ProngType"), _Tau->decayMode[i]); //original.
           passCuts = passCuts && passProng(stats.smap.at("ProngType"), _Tau->decayModeInt[i]);
         }
-        else if(cut == "decayModeFindingNewDMs") passCuts = passCuts && _Tau->DecayModeNewDMs[i] != 0;  //DecayModeNewDMs is a preselection for UL NanoAODv9
+//        else if(cut == "decayModeFindingNewDMs") passCuts = passCuts && _Tau->DecayModeNewDMs[i] != 0;  //DecayModeNewDMs is a preselection for UL NanoAODv9. Turn this off for v9
         // else if(cut == "decayModeFinding") passCuts = passCuts && _Tau->DecayMode[i] != 0; // original
-        else if(cut == "decayModeFinding") passCuts = passCuts && _Tau->DecayModeOldDMs[i] != 0;
+        else if(cut == "decayModeFinding") passCuts = passCuts && _Tau->DecayModeOldDMs[i] != 0; // DecayModeOldDMs is from Tau_idDecayMode branch)
         else if(cut == "DiscrByGenMatchingStatus"){
           int genPartFlavor =  static_cast<int>(_Tau->genPartFlav[i]);
           passCuts = passCuts && ( (genPartFlavor >= stats.pmap.at("GenMatchingStatusRange").first) && (genPartFlavor <= stats.pmap.at("GenMatchingStatusRange").second));
@@ -3637,6 +3813,7 @@ double Analyzer::getBJetSF(CUTS ePos, const PartStats& stats) {
   bjetSFall = bjetSFall * bjetSFtemp;
 
   return bjetSFall;
+
 }
 
 double Analyzer::getBJetSFResUp(CUTS ePos, const PartStats& stats) {
@@ -4690,12 +4867,14 @@ void Analyzer::fill_histogram(std::string year) {
             //std::cout << "prefiring wgt up = " << prefiringwgtprod.getPrefiringWeight("Up") << std::endl;
             // wgt *= prefiringwgtprod.getPrefiringWeight("Up");
             wgt *= l1prefiringwgt_up;
+     
           }
         } else if(syst_names[i]=="L1Prefiring_weight_Down"){
           if(distats["Run"].bfind("ApplyL1PrefiringWeight")){
             // wgt /= prefiringwgtprod.getPrefiringWeight("");
             wgt /= l1prefiringwgt;
             wgt *= l1prefiringwgt_dn;
+            
           }
         }
       }
@@ -4941,6 +5120,29 @@ void Analyzer::fill_Folder(std::string group, const int max, Histogramer &ihisto
 
 
     histAddVal(gendilepmass, "ZDiLepMass");
+
+///////For SUSY signal
+
+    for(size_t j = 0; j < genSUSYPartIndex.size(); j++){
+
+      int particle_id = abs(_Gen->pdg_id[genSUSYPartIndex.at(j)]);
+
+      if(particle_id == 1000022){   
+        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Neutralino1Mass");
+      }
+      else if (particle_id == 1000023){
+        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Neutralino2Mass");
+      }
+      else if (particle_id == 1000024){
+        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Chargino1Mass");
+      }
+    }
+
+    for(size_t k = 0; k < genSUSYPartIndexStau.size(); k++){
+      histAddVal(abs(_Gen->mass(genSUSYPartIndexStau.at(k))), "StauMass");
+    }
+
+////////////
 
     double mass=0, sf_mass=0; // sf_mass == mass of same flavor dilepton pairs
     TLorentzVector lep1(0,0,0,0), lep2(0,0,0,0);

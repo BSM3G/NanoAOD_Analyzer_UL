@@ -3,8 +3,8 @@
 ####################################
 
 CalculatePUSystematics true
-DataHistos PileUpReweighting2018UL.root       #2016 preVFP: PileUpReweighting2016ULpreVFP.root, 2016 postVFP: PileUpReweighting2016ULpostVFP.root 2017: PileUpReweighting2017UL.root, 2018: PileUpReweighting2018UL.root
-MCHistos mc2018_pileup_20UL18.root   #2016 preVFP: mc2016preVFP_pileup_20UL16.root, 2016 postVFP: mc2016postVFP_pileup_20UL16.root 2017: mc2017_pileup_20UL17.root, 2018:mc2018_pileup_20UL18.root
+DataHistos PileUpReweighting2018UL.root       # 2016 preVFP: PileUpReweighting2016ULpreVFP.root, 2016 postVFP: PileUpReweighting2016ULpostVFP.root 2017: PileUpReweighting2017UL.root, 2018: PileUpReweighting2018UL.root
+MCHistos mc2018_pileup_20UL18.root   # 2016 preVFP: mc2016preVFP_pileup_20UL16.root, 2016 postVFP: mc2016postVFP_pileup_20UL16.root 2017: mc2017_pileup_20UL17.root, 2018:mc2018_pileup_20UL18.root
 DataPUHistName pileup
 MCPUHistName pileup
 
@@ -13,8 +13,8 @@ ApplyTauIDSF true
 TauIdSFsByDM false # Tau ID scale factors that are decay mode (DM) - dependent. If using di-tau triggers and tau-pt > 40 GeV, this are the recommended SFs.
 TauSFforEmbeddedSamples false
 
-ApplyTauAntiEleSF false
-ApplyTauAntiMuSF false
+ApplyTauAntiEleSF true
+ApplyTauAntiMuSF true
 
 ApplyISRZBoostSF true # Z-boost weight corrections derived for ISR+stau analysis (SUS-19-002)
 ApplySUSYZBoostSF false # Official Z-boost weight corrections derived by the SUSY PAG.
@@ -44,8 +44,8 @@ GenDilepMassRange 80.0 100.0
 
 /// ------ Triggers ----- ///
 
-Trigger1FirstRequirement HLT_IsoMu24 
-Trigger1SecondRequirement HLT_IsoMu24 
+Trigger1FirstRequirement HLT_PFMET120_PFMHT120
+Trigger1SecondRequirement HLT_PFMET120_PFMHT120
 UseTriggerWildcard true
 
 /// Trigger2FirstRequirement HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
@@ -61,7 +61,7 @@ TreatMuonsAsTaus 0
 ApplyMetFilters true
 ApplyMETxyShiftCorrections true
 MT2Mass 0.
-DiscrByMet false
+DiscrByMet true
 MetCut 230.0 10000.0
 
 DiscrByMHT false

@@ -44,16 +44,10 @@ Met::Met(TTree* _BOOM, std::string _GenName,  std::vector<std::string> _syst_nam
   syst_MHT.resize(syst_names.size());
   syst_MHTphi.resize(syst_names.size());
 
-  if( std::find(syst_names.begin(), syst_names.end(), "MetUncl_Up") != syst_names.end() && _BOOM->GetListOfBranches()->FindObject((GenName+"_MetUnclustEnUpDeltaX").c_str()) !=0){
-    SetBranch((GenName+"_MetUnclustEnUpDeltaX").c_str(), MetUnclUp[0]);
-    SetBranch((GenName+"_MetUnclustEnUpDeltaY").c_str(), MetUnclUp[1]);
-    Unclup = std::find(syst_names.begin(), syst_names.end(), "MetUncl_Up") -syst_names.begin();
-  }
-  if( std::find(syst_names.begin(), syst_names.end(), "MetUncl_Down") != syst_names.end() && _BOOM->GetListOfBranches()->FindObject((GenName+"_MetUnclustEnUpDeltaY").c_str()) !=0){
-    SetBranch((GenName+"_MetUnclustEnUpDeltaX").c_str(), MetUnclDown[0]);
-    SetBranch((GenName+"_MetUnclustEnUpDeltaY").c_str(), MetUnclDown[1]);
-    Uncldown = std::find(syst_names.begin(), syst_names.end(), "MetUncl_Down")- syst_names.begin();
-  }
+  //for unclestered MET systematics
+  SetBranch((GenName+"_MetUnclustEnUpDeltaX").c_str(), metUnclDeltaX);
+  SetBranch((GenName+"_MetUnclustEnUpDeltaY").c_str(), metUnclDeltaY);
+     
   activeSystematic=0;
 }
 
@@ -70,7 +64,19 @@ void Met::addP4Syst(TLorentzVector mp4, int syst){
   systRawMetVec.at(syst)->SetPtEtaPhiE(mp4.Pt(),mp4.Eta(),mp4.Phi(),mp4.E());
 }
 
-
+//New 10/2022 Jethro may need if uncl energy delta branch empty
+//void Met::getUnclEn(TLorentzVector corr_jets, int syst){
+//  
+//  
+//  float jets_px = corr_jets.Pt() * cos(corr_jets.Phi());
+//  float jets_py = corr_jets.Pt() * sin(corr_jets.Phi()); 
+//  
+//  float unclE_px = systRawMetVec.at(syst)->Px() + jets_px;  
+//  float unclE_py = systRawMetVec.at(syst)->Py() + jets_py;
+//
+//  unclMET.SetPxPyPzE(unclE_px, unclE_py, unclMET.Pz(), TMath::Sqrt(pow(unclE_px,2) + pow(unclE_py,2)));
+//  std::cout << "Uncl MET = " << unclMET.E() << std::endl;
+//}
 void Met::init(){
   //cleanup of the particles
   //keep this if there is any ever some need for a unchanged met
@@ -85,9 +91,11 @@ void Met::init(){
   }
   RawMet.SetPtEtaPhiM(raw_met_pt,0,raw_met_phi,raw_met_pt);
 
+
   for(int i=0; i < (int) syst_names.size(); i++) {
      // initialize the Raw MET vector
      if(systRawMetVec.at(i) != nullptr) addP4Syst(RawMet, i);
+
      // initialize the deltaMuMet vectors to zero
      fill(systdeltaMEx.begin(), systdeltaMEx.end(), 0);
      fill(systdeltaMEy.begin(), systdeltaMEy.end(), 0);
@@ -274,18 +282,24 @@ void Met::propagateUnclEnergyUncty(std::string& systname, int syst){
   // This will only apply for the MetUncl uncertainty in MC
   float met_px_unclEnshift = systRawMetVec.at(0)->Px(); // 0 refers to the nominal value, which at this point should already have all corrections applied
   float met_py_unclEnshift = systRawMetVec.at(0)->Py();
+  
 
+  
   if(systname.find("_Up") != std::string::npos){
-
-    met_px_unclEnshift = met_px_unclEnshift + MetUnclUp[0];
-    met_py_unclEnshift = met_py_unclEnshift + MetUnclUp[1];
+    
+    
+   
+    met_px_unclEnshift = met_px_unclEnshift + metUnclDeltaX;
+    met_py_unclEnshift = met_py_unclEnshift + metUnclDeltaY;
+    
+    
     }
     else if(systname.find("_Down") != std::string::npos){
 
-    met_px_unclEnshift = met_px_unclEnshift + MetUnclDown[0];
-    met_py_unclEnshift = met_py_unclEnshift + MetUnclDown[1];
-  }
-
+    met_px_unclEnshift =  met_px_unclEnshift - metUnclDeltaX; 
+    met_py_unclEnshift =  met_py_unclEnshift - metUnclDeltaY;
+ 
+   }
   systRawMetVec.at(syst)->SetPxPyPzE(met_px_unclEnshift, met_py_unclEnshift, systRawMetVec.at(syst)->Pz(), TMath::Sqrt(pow(met_px_unclEnshift,2) + pow(met_py_unclEnshift,2)));
 
 }

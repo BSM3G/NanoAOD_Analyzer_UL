@@ -144,7 +144,7 @@ DPhiMetCut 0.7 9999.5
 	 SecondLeadingJet
 ###################################
 
-DoDiscrByThisJet 1
+DoDiscrByThisJet 0
 
 EtaCut 0.0 5.0
 PtCut 30.0

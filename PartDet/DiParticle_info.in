@@ -59,7 +59,7 @@ CosDphiCut 	 -1.00   -0.95
 
 DiscrByMassReco  true
 HowCalculateMassReco NONE     ###VectorSumOfVisProductsAndMet   or    CollinearApprox 
-MassCut          80.0   100.0
+MassCut          75.0   105.0
 
 DiscrByCDFzeta2D          0
 PZetaCutCoefficient       1.0

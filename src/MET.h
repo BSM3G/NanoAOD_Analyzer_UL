@@ -63,6 +63,7 @@ public:
   void applyXYshiftCorr(std::string const& year, std::string const& runera, int npv, bool const& isdata, std::string& systname, int syst, bool const& isPreVFP);
   void propagateUnclEnergyUncty(std::string& systname, int syst);
   void calculateHtAndMHt(PartStats& stats, Jet& jet, int syst);
+  void getUnclEn(TLorentzVector corr_jets, int syst);
 
   TLorentzVector Reco;
   TLorentzVector RawMet;
@@ -96,11 +97,20 @@ protected:
   float raw_met_pt;
   float raw_met_phi;
 
+//May need this vector to calculate unclMET in MET.cc
+//TLorentzVector unclMET;
+
   //note this is only for pt and phi
-  float MetUnclUp[2] = {0, 0};
-  float MetUnclDown[2] = {0, 0};
-  int Unclup=-1;
-  int Uncldown=-1;
+//  float MetUnclUp[2] = {0, 0};    //obsolete branch for uncl. energy
+//  float MetUnclDown[2] = {0, 0};   //obsolete branch for uncl. energy
+//  int Unclup=-1;
+//  int Uncldown=-1;
+
+//simpler approach in variables for uncl met systematics
+    float_t metUnclDeltaX;
+    float_t metUnclDeltaY;
+ 
+
   mt2_bisect::mt2 mt2_event;
 
 };

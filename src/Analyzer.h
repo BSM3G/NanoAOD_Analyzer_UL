@@ -123,7 +123,10 @@ public:
   bool passJetVetoEEnoise2017(int);
 
   bool skimSignalMC(int);
-  std::string inputSignalModel="", inputSignalMassParam="";
+//  bool skimSignalMC();
+//  std::string inputSignalModel="", inputSignalMassParam="";
+  std::string inputSignalModel="", inputSignalMassParam="", inputC1Mass="", inputN2Mass="", inputN1Mass="", inputStauMass="";
+  std::string inputC1_pdgID="", inputN2_pdgID="", inputN1_pdgID="", inputStau_pdgID="";
   bool finalInputSignal = false;
 
   void smearLepton(Lepton&, CUTS, const PartStats&, const PartStats&, int syst=0);
@@ -153,6 +156,8 @@ public:
   void getGoodRecoLeadJets(CUTS, const PartStats&, const int);
   void getGoodRecoBJets(CUTS, const PartStats&, const int); //01.16.19
   void getGoodRecoFatJets(CUTS, const PartStats&, const int);
+
+  std::vector<int> genSUSYPartIndex, genSUSYPartIndexStau;
 
   void getGoodLeptonCombos(Lepton&, Lepton&, CUTS, CUTS, CUTS, const PartStats&, const int);
   double CalculateDiLepMassDeltaPt(const TLorentzVector&, const TLorentzVector&, const float, const float);

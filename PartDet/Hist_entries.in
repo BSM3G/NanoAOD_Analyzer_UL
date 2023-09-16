@@ -63,6 +63,14 @@ GenMuonEta         72  -3.6      +3.6
 GenMuonPhi         36  -3.15     +3.15
 GenDiTauMass      100   0.    10000.
 GenZDiLepMass	  1000	0.	 5000.
+
+
+GenNeutralino2Mass	400	0.	1000.
+GenNeutralino1Mass 	400	0.	1000.
+GenChargino1Mass   	400	0.	1000.
+GenStauMass        	400	0.	1000.
+
+
 //GenHadTauFrac_scalar	  100	0.    1.
 //GenHadTauFrac_vector	  100	0.    1.
 //GenDeltaR		  100	0.    10.
@@ -104,7 +112,7 @@ Tau2MetMt		 200 0.	       1000.
 
 //------------------------------------------------//
 
-FillElectron1 0
+FillElectron1 1
 
 NElectron1                   20   0.      20.
 Electron1Energy            2000   0.    5000.
@@ -141,7 +149,7 @@ FirstLeadingMuon1Eta    144  -7.2     +7.2
 Muon1Phi                 36  -3.15    +3.15
 Muon1MetMt              100   0      500
 
-FillMuon2 1
+FillMuon2 0
 
 NMuon2                   20   0.      20.
 Muon2Energy            2000   0.    5000.
@@ -162,7 +170,7 @@ Jet1Pt       200   0.   500.
 Jet1Eta      100  -5.0   +5.0
 Jet1Phi      144  -6.3   +6.3
 
-FillJet2 1
+FillJet2 0
 
 NJet2         20   0.    20.
 Jet2Energy   200   0.   500.
@@ -185,7 +193,7 @@ CentralJetPt    200   0.   500.
 CentralJetEta   100  -5.0   +5.0
 
 
-FillWJet 1
+FillWJet 0
 
 NWJet      20   0.    20.
 WJetPt    200   0.   500.
@@ -289,7 +297,7 @@ Electron1MetDeltaPhiVsDiElectronCosDphi   72  0   +3.15  220    -1.1    1.1
 
 //------------------------------------------------//
 
-FillDiMuon 1
+FillDiMuon 0
 
 DiMuon_Muon1DiJetDeltaPhi       72     0       +3.15
 DiMuon_Muon2DiJetDeltaPhi       72     0       +3.15
@@ -308,7 +316,6 @@ DiMuon_Muon2MetDeltaPhi         72     0       +3.15
 DiMuonPZeta                    200  -100      100
 DiMuonPZetaVis                 100     0      100
 DiMuonZeta1D                   150  -300      300
-DiMuonPt                       500     0.    1000.
 DiMuonNotReconstructableMass   600     0     1500
 DiMuonReconstructableMass      600     0     1500
 DiMuonReconstructableMassDeltaPt   100 0. 5000.
@@ -324,7 +331,7 @@ Muon1MetDeltaPhiVsDiMuonCosDphi   72  0   +3.15  220    -1.1    1.1
 
 //------------------------------------------------//
 
-FillDiTau 1
+FillDiTau 0
 
 DiTau_Tau1DiJetDeltaPhi          72     0    +3.15
 DiTau_Tau2DiJetDeltaPhi          72     0    +3.15
