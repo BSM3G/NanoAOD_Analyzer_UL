@@ -2,16 +2,5 @@
             SignalMC
 ####################################
 
-ModelTag StauStau_Ewkino
-
-C1_pdgID 1000024 #Chargino1
-C1Mass 450
-
-N2_pdgID 1000023 #Neuralino2
-N2Mass 450
-
-N1_pdgID 1000022 #Neutralino1
-N1Mass 420
-
-Stau_pdgID 1000015 #Stau
-StauMass 435
+ModelTag VBF_EWKino_StauDominated
+MassParameters 150_147p50_145p00

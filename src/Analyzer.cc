@@ -162,7 +162,7 @@ Analyzer::Analyzer(std::vector<std::string> infiles, std::string outfile, bool s
   setupBJetSFInfo(_Jet->pstats["BJet"], year);
 
   // Tau scale factors stuff
-  setupTauIDSFsInfo(_Tau->pstats["TauID"].smap.at("TauIDAlgorithm"), year, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("TauSFforEmbeddedSamples"));
+  setupTauIDSFsInfo(_Tau->pstats["TauID"].smap.at("TauIDAlgorithm"), year, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("TauIdSFsByPT"), distats["Run"].bfind("TauSFforEmbeddedSamples"), distats["Run"].bfind("HighPtTaus"));
   setupTauResSFsInfo(distats["Run"].bfind("ApplyETauFakeRateESSF"));
 
   // L1 prefiring weights only for 2016 or 2017
@@ -619,19 +619,42 @@ bool Analyzer::skimSignalMC(int event){
   if(! isSignalMC ) return true;
 
   // Construct the name of the branch:
- // std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str();
-  std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputC1Mass+"_"+inputStauMass+"_"+inputN1Mass+"p00").c_str();
+   std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str();
+//  std::string signalBranchName = ("GenModel_"+inputSignalModel+"_"+inputC1Mass+"_"+inputStauMass+"_"+inputN1Mass+"p00").c_str();
   // std::cout << "Name of the branch: " << signalBranchName << std::endl;
   bool isInputSignal = false;
 
+//  for(int i=0; i < BOOM->GetListOfBranches()->GetSize(); i++){
+//        std::string branch_name = BOOM->GetListOfBranches()->At(i)->GetName();
+//        // Look for branches that match exactly the trigger name
+//        if(branch_name.compare(signalBranchName.c_str()) != 0){
+//        // std::cout << "The branch: " << branch_name << " is a selected trigger branch." << std::endl;
+//          TBranch *signalBranch = BOOM->GetBranch(signalBranchName.c_str());
+//          signalBranch->SetStatus(1);
+//          signalBranch->SetAddress(&isInputSignal);
+//
+//          BOOM->GetEntry(event);
+//
+//          finalInputSignal = isInputSignal;
+//          signalBranch->ResetAddress();
+//          // std::cout << "Input signal: " << signalBranchName << ", isInputSignal? " << finalInputSignal << std::endl;
+//        }
+//        else {
+//          continue;
+//        }
+//     }
+//  
+//////original code, was put in the loop above in the case the branch with signalBranchName doesn't exist     
   TBranch *signalBranch = BOOM->GetBranch(signalBranchName.c_str());
-  signalBranch->SetStatus(1);
-  signalBranch->SetAddress(&isInputSignal);
-
-  BOOM->GetEntry(event);
-
-  finalInputSignal = isInputSignal;
-  signalBranch->ResetAddress();
+  if(signalBranch != NULL){
+    signalBranch->SetStatus(1);
+    signalBranch->SetAddress(&isInputSignal);
+  
+    BOOM->GetEntry(event);
+  
+    finalInputSignal = isInputSignal;
+    signalBranch->ResetAddress();
+    }
   // std::cout << "Input signal: " << signalBranchName << ", isInputSignal? " << finalInputSignal << std::endl;
   return finalInputSignal;
 }
@@ -704,13 +727,6 @@ void Analyzer::preprocess(int event, std::string year){ // This function no long
 
     genMotherPartIndex.clear();
 
-////////additional vectors for signal processing/////
-    genSUSYPartIndex.clear();
-    genSUSYPartIndexStau.clear();
-
-    genSUSYPartIndex.shrink_to_fit();
-    genSUSYPartIndexStau.shrink_to_fit();
-//////////////////////////////
 
     getGoodGen(_Gen->pstats["Gen"]);
     getGoodGenHadronicTaus(_GenHadTau->pstats["Gen"]);
@@ -1091,7 +1107,7 @@ bool Analyzer::select_mc_background(){
 }
 
 // --- Function that sets up all the SFs recommended by the Tau POG for Run II legacy --- //
-void Analyzer::setupTauIDSFsInfo(std::string tauidalgoname, std::string year, bool applyDMsfs, bool applyEmbedding){
+void Analyzer::setupTauIDSFsInfo(std::string tauidalgoname, std::string year, bool applyDMsfs, bool applyPTsfs, bool applyEmbedding, bool highPTtaus){
 
   static std::map<std::string, std::string> tauidyearmap = {
     {"2016", ""},
@@ -1159,11 +1175,11 @@ void Analyzer::setupTauIDSFsInfo(std::string tauidalgoname, std::string year, bo
   antimuwp = _Tau->pstats["Tau1"].dmap.at("DiscrAgainstMuon");
 
   //std::cout << "Working points 1: tau id = " << tauidwp << ", antiele = " << antielewp << ", antimu = " << antimuwp << std::endl;
-  //std::cout << "Working points 1: tau id = " << tauidwpsmap[tauidwp] << ", antiele = " << antielewpsmap[antielewp] << ", antimu = " << antimuwpsmap[antimuwp] << std::endl;
+  std::cout << "Working points 1: tau id = " << tauidwpsmap[tauidwp] << ", antiele = " << antielewpsmap[antielewp] << ", antimu = " << antimuwpsmap[antimuwp] << std::endl;
 
   // Load the modules according to the algorithm and working points specified for tau ID SFs
   if(tauidwp != 0){
-    tau1idSFs = TauIDSFTool((PUSPACE+"TauIDSFs/data").c_str(), tauidyear, tauid_algo, tauidwpsmap[tauidwp], applyDMsfs, applyEmbedding);
+    tau1idSFs = TauIDSFTool((PUSPACE+"TauIDSFs/data").c_str(), tauidyear, tauid_algo, tauidwpsmap[tauidwp], antielewpsmap[antielewp], applyDMsfs, applyPTsfs, applyEmbedding, highPTtaus);
   }
   else{
     failtau1iso = true;
@@ -1192,7 +1208,7 @@ void Analyzer::setupTauIDSFsInfo(std::string tauidalgoname, std::string year, bo
 
   // Load the modules according to the algorithm and working points specified for tau ID SFs
   if(tauidwp != 0){
-    tau2idSFs = TauIDSFTool((PUSPACE+"TauIDSFs/data").c_str(), tauidyear, tauid_algo, tauidwpsmap[tauidwp], applyDMsfs, applyEmbedding);
+    tau2idSFs = TauIDSFTool((PUSPACE+"TauIDSFs/data").c_str(), tauidyear, tauid_algo, tauidwpsmap[tauidwp], antielewpsmap[antielewp], applyDMsfs, applyPTsfs, applyEmbedding, highPTtaus); 
   }
   else{
     failtau2iso = true;
@@ -1213,7 +1229,7 @@ void Analyzer::setupTauResSFsInfo(bool taufakeenergyscale){
 
 }
 
-double Analyzer::getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getAntiElesf, bool getAntiMusf, std::string uncertainty){
+double Analyzer::getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getTauIDbyPTsfs, bool getAntiElesf, bool getAntiMusf, std::string uncertainty){
 
   double sf = 1.0, sf_tauid = 1.0, sf_antiele = 1.0, sf_antimu = 1.0;
 
@@ -1229,16 +1245,21 @@ double Analyzer::getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getAnti
     // std::cout << "gen match status = " << gen_match_status << std::endl;
 
     if(getTauIDsf && !failtau1iso){
-      if(!getTauIDbyDMsfs){ // pT-dependent SFs
+      if(getTauIDbyPTsfs){ // pT-dependent SFs (depricated)
         sf_tauid *= tau1idSFs.getSFvsPT(_Tau->pt(i), gen_match_status, uncertainty);
       }
-      else{ // DM-dependent SFs
+      else if(getTauIDbyDMsfs){ // DM -dependent (depricated)
         sf_tauid *= tau1idSFs.getSFvsDM(_Tau->pt(i), _Tau->decayModeInt[i], gen_match_status, uncertainty);
       }
+      else{ //get vs DM and PT SFs (latest recommended as of end of 2023)
+        sf_tauid *= tau1idSFs.getSFvsDMandPT(_Tau->pt(i), _Tau->decayModeInt[i], gen_match_status, uncertainty);
+      }
     }
+
     else if(getTauIDsf && failtau1iso) sf_tauid = 1.0;
     else if(getAntiElesf) sf_antiele *= tau1id_antiEleSFs.getSFvsEta(_Tau->eta(i), gen_match_status, uncertainty);
     else if(getAntiMusf) sf_antimu *= tau1id_antiMuSFs.getSFvsEta(_Tau->eta(i), gen_match_status, uncertainty);
+
   }
 
   // std::cout << "sf_tauid = " << sf_tauid << ", sf_antiele = " << sf_antiele << ", sf_antimu = " << sf_antimu << std::endl;
@@ -1250,11 +1271,14 @@ double Analyzer::getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getAnti
     // std::cout << "gen match status = " << gen_match_status << std::endl;
 
     if(getTauIDsf && !failtau2iso){
-      if(!getTauIDbyDMsfs){ // pT-dependent SFs
+      if(getTauIDbyPTsfs){ // pT-dependent SFs (depricated)
         sf_tauid *= tau2idSFs.getSFvsPT(_Tau->pt(i), gen_match_status, uncertainty);
       }
-      else{ // DM-dependent SFs
+      else if(getTauIDbyDMsfs){
         sf_tauid *= tau2idSFs.getSFvsDM(_Tau->pt(i), _Tau->decayModeInt[i], gen_match_status, uncertainty);
+      }
+      else{ //get vs pt and DM SFs (latest recommended as of end of 2023)
+        sf_tauid *= tau2idSFs.getSFvsDMandPT(_Tau->pt(i), _Tau->decayModeInt[i], gen_match_status, uncertainty);
       }
     }
     else if(getTauIDsf && failtau2iso) sf_tauid = 1.0;
@@ -1262,7 +1286,6 @@ double Analyzer::getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getAnti
     else if(getAntiMusf) sf_antimu *= tau2id_antiMuSFs.getSFvsEta(_Tau->eta(i), gen_match_status, uncertainty);
   }
 
-  //std::cout << "sf_tauid = " << sf_tauid << ", sf_antiele = " << sf_antiele << ", sf_antimu = " << sf_antimu << std::endl;
 
   sf = sf_tauid * sf_antiele * sf_antimu;
 
@@ -1648,36 +1671,36 @@ void Analyzer::setupGeneral(std::string year) {
 
   std::cout << " ---------------------------------------------------------------------- " << std::endl;
 
-//  // double check
-//  if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) == 0){
-//   isSignalMC = false;
-//   std::cout << "This is not a signal MC sample." << std::endl;
-//  }
-//  else if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) != 0){
-//   isSignalMC = true;
-//   std::cout << "This is a signal MC sample!" << std::endl;
-//  }
+  // double check
+  if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) == 0){
+   isSignalMC = false;
+   std::cout << "This is not a signal MC sample." << std::endl;
+  }
+  else if(BOOM->FindBranch( ("GenModel_"+inputSignalModel+"_"+inputSignalMassParam).c_str()) != 0){
+   isSignalMC = true;
+   std::cout << "This is a signal MC sample!" << std::endl;
+  }
 
 /////////////SUSY signal version of getting isSignalMC
-
-  isSignalMC = false;
-  TObjArray *nameArray = BOOM->GetListOfBranches();
-  std::string prefix = ("GenModel_"+inputSignalModel).c_str();
-  for (int i = 0; i < nameArray->GetEntries(); ++i) {
-    std::string name = nameArray->At(i)->GetName();
-    //std::cout << prefix << std::endl;
-    std::string namePrefix = name.substr(0, prefix.length());
-    if (prefix == namePrefix) {
-      isSignalMC = true;
-      std::cout << "This is a signal MC sample!" << std::endl;
-      std::cout << "" << std::endl;
-      break;
-    } 
-  }
-  if(!isSignalMC){
-    std::cout << "This is not a signal MC sample." << std::endl; 
-  }
-
+//
+//  isSignalMC = false;
+//  TObjArray *nameArray = BOOM->GetListOfBranches();
+//  std::string prefix = ("GenModel_"+inputSignalModel).c_str();
+//  for (int i = 0; i < nameArray->GetEntries(); ++i) {
+//    std::string name = nameArray->At(i)->GetName();
+//    //std::cout << prefix << std::endl;
+//    std::string namePrefix = name.substr(0, prefix.length());
+//    if (prefix == namePrefix) {
+//      isSignalMC = true;
+//      std::cout << "This is a signal MC sample!" << std::endl;
+//      std::cout << "" << std::endl;
+//      break;
+//    } 
+//  }
+//  if(!isSignalMC){
+//    std::cout << "This is not a signal MC sample." << std::endl; 
+//  }
+////////////////////////////////
 
 
 
@@ -1803,80 +1826,80 @@ void Analyzer::read_info(std::string filename) {
 
 
 ////SUSY particles
-
-      if(stemp.at(0).find("C1_pdgID") != std::string::npos){
-        for(auto c1_pdgID: stemp){
-          if(c1_pdgID.find("C1_pdgID") == std::string::npos and "=" != c1_pdgID){
-            inputC1_pdgID = c1_pdgID;
-             std::cout << "C1_pdgID is: " << c1_pdgID << std::endl;
-          }
-        }
-        continue;
-      }
-      if(stemp.at(0).find("C1Mass") != std::string::npos){
-        for(auto c1mass: stemp){
-          if(c1mass.find("C1Mass") == std::string::npos and "=" != c1mass){
-            inputC1Mass = c1mass;
-            std::cout << "C1Mass is: " << c1mass << std::endl;
-          } 
-        }
-        continue;
-      }
-      if(stemp.at(0).find("N2Mass") != std::string::npos){
-        for(auto n2mass: stemp){
-          if(n2mass.find("N2Mass") == std::string::npos and "=" != n2mass){
-            inputN2Mass = n2mass;
-            std::cout << "N2Mass is: " << n2mass << std::endl;
-          }
-        }
-        continue;
-      }
-      if(stemp.at(0).find("N2_pdgID") != std::string::npos){
-        for(auto n2_pdgID: stemp){
-          if(n2_pdgID.find("N2_pdgID") == std::string::npos and "=" != n2_pdgID){
-            inputN2_pdgID = n2_pdgID;
-            std::cout << "N2_pdgID is: " << n2_pdgID << std::endl;
-          }
-        }
-        continue;
-      }
-      if(stemp.at(0).find("N1Mass") != std::string::npos){
-        for(auto n1mass: stemp){
-          if(n1mass.find("N1Mass") == std::string::npos and "=" != n1mass){
-            inputN1Mass = n1mass;
-            std::cout << "N1Mass is: " << n1mass << std::endl;
-          }
-        }
-        continue;
-      }
-      if(stemp.at(0).find("N1_pdgID") != std::string::npos){
-        for(auto n1_pdgID: stemp){
-          if(n1_pdgID.find("N1_pdgID") == std::string::npos and "=" != n1_pdgID){
-            inputN1_pdgID = n1_pdgID;
-             std::cout << "N1_pdgID is: " << n1_pdgID << std::endl;
-          }
-        }
-        continue;
-      }
-      if(stemp.at(0).find("StauMass") != std::string::npos){
-        for(auto staumass: stemp){
-          if(staumass.find("StauMass") == std::string::npos and "=" != staumass){
-            inputStauMass = staumass;
-            std::cout << "StauMass is: " << staumass << std::endl;
-          }
-        }
-        continue;
-      }
-      if(stemp.at(0).find("Stau_pdgID") != std::string::npos){
-        for(auto stau_pdgID: stemp){
-          if(stau_pdgID.find("Stau_pdgID") == std::string::npos and "=" != stau_pdgID){
-            inputStau_pdgID = stau_pdgID;
-            std::cout << "Stau_pdgID is: " << stau_pdgID << std::endl;
-          }
-        }
-        continue;
-      }
-
+//
+//      if(stemp.at(0).find("C1_pdgID") != std::string::npos){
+//        for(auto c1_pdgID: stemp){
+//          if(c1_pdgID.find("C1_pdgID") == std::string::npos and "=" != c1_pdgID){
+//            inputC1_pdgID = c1_pdgID;
+//             std::cout << "C1_pdgID is: " << c1_pdgID << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("C1Mass") != std::string::npos){
+//        for(auto c1mass: stemp){
+//          if(c1mass.find("C1Mass") == std::string::npos and "=" != c1mass){
+//            inputC1Mass = c1mass;
+//            std::cout << "C1Mass is: " << c1mass << std::endl;
+//          } 
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("N2Mass") != std::string::npos){
+//        for(auto n2mass: stemp){
+//          if(n2mass.find("N2Mass") == std::string::npos and "=" != n2mass){
+//            inputN2Mass = n2mass;
+//            std::cout << "N2Mass is: " << n2mass << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("N2_pdgID") != std::string::npos){
+//        for(auto n2_pdgID: stemp){
+//          if(n2_pdgID.find("N2_pdgID") == std::string::npos and "=" != n2_pdgID){
+//            inputN2_pdgID = n2_pdgID;
+//            std::cout << "N2_pdgID is: " << n2_pdgID << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("N1Mass") != std::string::npos){
+//        for(auto n1mass: stemp){
+//          if(n1mass.find("N1Mass") == std::string::npos and "=" != n1mass){
+//            inputN1Mass = n1mass;
+//            std::cout << "N1Mass is: " << n1mass << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("N1_pdgID") != std::string::npos){
+//        for(auto n1_pdgID: stemp){
+//          if(n1_pdgID.find("N1_pdgID") == std::string::npos and "=" != n1_pdgID){
+//            inputN1_pdgID = n1_pdgID;
+//             std::cout << "N1_pdgID is: " << n1_pdgID << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("StauMass") != std::string::npos){
+//        for(auto staumass: stemp){
+//          if(staumass.find("StauMass") == std::string::npos and "=" != staumass){
+//            inputStauMass = staumass;
+//            std::cout << "StauMass is: " << staumass << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//      if(stemp.at(0).find("Stau_pdgID") != std::string::npos){
+//        for(auto stau_pdgID: stemp){
+//          if(stau_pdgID.find("Stau_pdgID") == std::string::npos and "=" != stau_pdgID){
+//            inputStau_pdgID = stau_pdgID;
+//            std::cout << "Stau_pdgID is: " << stau_pdgID << std::endl;
+//          }
+//        }
+//        continue;
+//      }
+//
 //////////////End SUSY particles
 
     } else if(stemp.size() == 3 and stemp.at(0).find("Trigger") == std::string::npos){
@@ -2122,6 +2145,15 @@ void Analyzer::setupJetCorrections(std::string year, std::string outputfilename)
     jerTagsMC["2016"] = "Summer20UL16_JRV3_MC";
    }
 
+   static std::map<std::string, std::string> jerTagsDATA = {
+     {"2016" , "Summer20UL16_JRV3_DATA"},
+     {"2017" , "Summer19UL17_JRV2_DATA"},
+     {"2018" , "Summer19UL18_JRV2_DATA"}
+   };
+   if (year == "2016" && distats["Run"].bfind("is2016preVFP")){
+    jerTagsMC["2016"] = "Summer20UL16_JRV3_DATA";
+   }
+
 
    std::string jertag = jerTagsMC.begin()->second;
    std::string jectag = jecTagsMC.begin()->second;
@@ -2136,7 +2168,7 @@ void Analyzer::setupJetCorrections(std::string year, std::string outputfilename)
      runera = (year+outputfilename.substr(pos,1)).c_str();
 
      jectag = jecTagsDATA[runera];
-     jertag = jerTagsMC[year];
+     jertag = jerTagsDATA[year];
      archivetag = archiveTagsDATA[year];
    }
    else{
@@ -2942,23 +2974,23 @@ void Analyzer::getGoodGen(const PartStats& stats) {
   if(! neededCuts.isPresent(CUTS::eGen)) return;
 
   int particle_id = 0;
-  int particle_status = 0;
+//  int particle_status = 0;
 
   std::vector<int> intermiedateP4CorrPart;
 
   for(size_t j = 0; j < _Gen->size(); j++) {
 
     particle_id = abs(_Gen->pdg_id[j]);
-    particle_status = _Gen->status[j];
+//    particle_status = _Gen->status[j];
 
 //////For SUSY signal
-
-    if( (particle_id == std::stoi(inputN2_pdgID) && particle_status == 62) || (particle_id == std::stoi(inputC1_pdgID) && particle_status == 62) || (particle_id == std::stoi(inputN1_pdgID) && particle_status == 1) ){
-      genSUSYPartIndex.push_back(j);
-    } else if( particle_id == std::stoi(inputStau_pdgID) && (particle_status == 62 || particle_status == 22) ){
-      genSUSYPartIndexStau.push_back(j);
-    }
-
+//
+//    if( (particle_id == std::stoi(inputN2_pdgID) && particle_status == 62) || (particle_id == std::stoi(inputC1_pdgID) && particle_status == 62) || (particle_id == std::stoi(inputN1_pdgID) && particle_status == 1) ){
+//      genSUSYPartIndex.push_back(j);
+//    } else if( particle_id == std::stoi(inputStau_pdgID) && (particle_status == 62 || particle_status == 22) ){
+//      genSUSYPartIndexStau.push_back(j);
+//    }
+//
 ///////////
 
     if( (particle_id < 5 || particle_id == 9 || particle_id == 21) && genMaper.find(particle_id) != genMaper.end() && _Gen->status[j] == genMaper.at(5)->status){
@@ -3026,7 +3058,7 @@ void Analyzer::getGoodGenHadronicTaus(const PartStats& stats){
 
   // Loop over all gen-level hadronic taus stored in the corresponding list to apply certain selections
   for(size_t i=0; i < _GenHadTau->size(); i++){
-
+    
     if( stats.bfind("DiscrHadTauByPtAndEta") && (_GenHadTau->pt(i) < stats.pmap.at("HadTauPtCut").first || _GenHadTau->pt(i) > stats.pmap.at("HadTauPtCut").second || abs(_GenHadTau->eta(i)) > stats.dmap.at("HadTauEtaCut"))) continue;
     
     if( stats.bfind("DiscrByTauDecayMode") && (_GenHadTau->decayMode[i] < stats.pmap.at("TauDecayModes").first || _GenHadTau->decayMode[i] > stats.pmap.at("TauDecayModes").second)) continue;
@@ -3041,6 +3073,7 @@ void Analyzer::getGoodGenHadronicTaus(const PartStats& stats){
       }
     } 
     if( stats.bfind("DiscrHadTauByMotherID") && passMotherIDreq == 0) continue;
+    
 
     active_part->at(CUTS::eGHadTau)->push_back(i);
   }
@@ -3255,11 +3288,11 @@ void Analyzer::getGoodRecoLeptons(const Lepton& lep, const CUTS ePos, const CUTS
         else if (cut == "SelectTausThatAreMuons") passCuts = passCuts &&  !_Tau->pass_against_Muon(ePos, i);
 
         else if(cut == "DiscrByProngType") {
-          passCuts = passCuts && (stats.smap.at("ProngType").find("hps") == std::string::npos || _Tau->DecayModeNewDMs[i] != 0);
+          passCuts = passCuts && (stats.smap.at("ProngType").find("hps") == std::string::npos || _Tau->DecayModeNewDMs[i] != 0); // checks if tau decayMode branch has new decay mode labels. Turn off for v9;
           // passCuts = passCuts && passProng(stats.smap.at("ProngType"), _Tau->decayMode[i]); //original.
           passCuts = passCuts && passProng(stats.smap.at("ProngType"), _Tau->decayModeInt[i]);
         }
-//        else if(cut == "decayModeFindingNewDMs") passCuts = passCuts && _Tau->DecayModeNewDMs[i] != 0;  //DecayModeNewDMs is a preselection for UL NanoAODv9. Turn this off for v9
+        else if(cut == "decayModeFindingNewDMs") passCuts = passCuts && _Tau->DecayModeNewDMs[i] != 0;  //DecayModeNewDMs is a preselection for UL NanoAODv9. Turn this off for v9
         // else if(cut == "decayModeFinding") passCuts = passCuts && _Tau->DecayMode[i] != 0; // original
         else if(cut == "decayModeFinding") passCuts = passCuts && _Tau->DecayModeOldDMs[i] != 0; // DecayModeOldDMs is from Tau_idDecayMode branch)
         else if(cut == "DiscrByGenMatchingStatus"){
@@ -4781,7 +4814,7 @@ void Analyzer::fill_histogram(std::string year) {
     //if(distats["Run"].bfind("ApplyTauIDSF")) wgt *= getTauIdDataMCScaleFactor(0);
     // Arguments: getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getAntiElesf, bool getAntiMusf, std::string uncertainty)
     // std::cout << "ApplyTauIDSF = " << distats["Run"].bfind("ApplyTauIDSF") << ", TauIdSFsByDM = " << distats["Run"].bfind("TauIdSFsByDM") << ", ApplyTauAntiEleSF = " << distats["Run"].bfind("ApplyTauAntiEleSF") << ", ApplyTauAntiMuSF = " << distats["Run"].bfind("ApplyTauAntiMuSF") << std::endl;
-    if(distats["Run"].bfind("ApplyTauIDSF")) wgt *= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "");
+    if(distats["Run"].bfind("ApplyTauIDSF")) wgt *= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"),distats["Run"].bfind("TauIdSFsByPT"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "");
 
     // Apply Z-boost weights derived for ISR+stau analysis (SUS-19-002)
     if(distats["Run"].bfind("ApplyISRZBoostSF") && isVSample){
@@ -4838,13 +4871,13 @@ void Analyzer::fill_histogram(std::string year) {
         if(syst_names[i]=="Tau_weight_Up"){
           if(distats["Run"].bfind("ApplyTauIDSF")) {
             // Arguments: getTauIdSFs(bool getTauIDsf, bool getTauIDbyDMsfs, bool getAntiElesf, bool getAntiMusf, std::string uncertainty)
-            wgt /= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "");
-            wgt *= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "Up");
+            wgt /= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("TauIdSFsByPT"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "");
+            wgt *= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("TauIdSFsByPT"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "Up");
           }
         }else if(syst_names[i]=="Tau_weight_Down"){
           if(distats["Run"].bfind("ApplyTauIDSF")) {
-            wgt /= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "");
-            wgt *= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "Down");
+            wgt /= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("TauIdSFsByPT"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "");
+            wgt *= getTauIdSFs(true, distats["Run"].bfind("TauIdSFsByDM"), distats["Run"].bfind("TauIdSFsByPT"), distats["Run"].bfind("ApplyTauAntiEleSF"), distats["Run"].bfind("ApplyTauAntiMuSF"), "Down");
           }
         }
         // ---------- Pileup weights ---------- //
@@ -5122,26 +5155,28 @@ void Analyzer::fill_Folder(std::string group, const int max, Histogramer &ihisto
     histAddVal(gendilepmass, "ZDiLepMass");
 
 ///////For SUSY signal
-
-    for(size_t j = 0; j < genSUSYPartIndex.size(); j++){
-
-      int particle_id = abs(_Gen->pdg_id[genSUSYPartIndex.at(j)]);
-
-      if(particle_id == 1000022){   
-        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Neutralino1Mass");
-      }
-      else if (particle_id == 1000023){
-        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Neutralino2Mass");
-      }
-      else if (particle_id == 1000024){
-        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Chargino1Mass");
-      }
-    }
-
-    for(size_t k = 0; k < genSUSYPartIndexStau.size(); k++){
-      histAddVal(abs(_Gen->mass(genSUSYPartIndexStau.at(k))), "StauMass");
-    }
-
+//
+//    for(size_t j = 0; j < genSUSYPartIndex.size(); j++){
+//
+//      int particle_id = abs(_Gen->pdg_id[genSUSYPartIndex.at(j)]);
+//
+//      if(particle_id == 1000022){   
+//        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Neutralino1Mass");
+//      }
+//      else if (particle_id == 1000023){
+//        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Neutralino2Mass");
+//      }
+//      else if (particle_id == 1000024){
+//        histAddVal(abs(_Gen->mass(genSUSYPartIndex.at(j))), "Chargino1Mass");
+//      }
+//    }
+//
+//    for(size_t k = 0; k < genSUSYPartIndexStau.size(); k++){
+//      histAddVal(abs(_Gen->mass(genSUSYPartIndexStau.at(k))), "StauMass");
+//      histAddVal(_Gen->status[genSUSYPartIndexStau.at(k)], "StauStatus");
+//      histAddVal(abs(_Gen->pdg_id[_Gen->genPartIdxMother[genSUSYPartIndexStau.at(k)]]), "StauMotherpID");
+//    }
+//
 ////////////
 
     double mass=0, sf_mass=0; // sf_mass == mass of same flavor dilepton pairs

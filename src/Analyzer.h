@@ -183,7 +183,7 @@ public:
   bool isInTheCracks(float);
   bool passedLooseJetID(int);
   bool select_mc_background();
-  double getTauIdSFs(bool, bool, bool, bool, std::string);
+  double getTauIdSFs(bool, bool, bool, bool, bool, std::string);
   double getWkfactor();
   double getZBoostWeight();
   double getZpTWeight();
@@ -201,7 +201,7 @@ public:
   void getJetEnergyResSFs(Particle& jet, const CUTS eGenPos);
   void applyJetEnergyCorrections(Particle&, CUTS, const PartStats&, std::string, int syst=0);
 
-  void setupTauIDSFsInfo(std::string, std::string, bool, bool);
+  void setupTauIDSFsInfo(std::string, std::string, bool, bool, bool, bool);
   void setupTauResSFsInfo(bool);
 
   inline bool passCutRange(std::string, double, const PartStats&);

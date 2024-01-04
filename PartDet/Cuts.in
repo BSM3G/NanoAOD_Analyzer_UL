@@ -29,7 +29,7 @@ NGenHiggs	0  -1
 NGenTau		0  -1
 
 ***NRecoVertex        1   -1   ///at least one good vertex
-NRecoTriggers1     0   -1   ///events must fire the HLT_IsoMu24 trigger
+***NRecoTriggers1     1   -1   ///events must fire the HLT_IsoMu24 trigger
 ***METCut             1   -1   ///met cut
 ***NRecoTau1          1   1
 ***NRecoElectron1        0   0

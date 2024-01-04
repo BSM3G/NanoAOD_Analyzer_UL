@@ -578,9 +578,9 @@ Taus::Taus(TTree* _BOOM, std::string filename, std::vector<std::string> syst_nam
   }
 
   // --------- Decay modes --------- //
-//  SetBranch("Tau_idDecayMode",  DecayModeOldDMs); // on for NANOAOD v8
-  SetBranch("Tau_idDecayModeOldDMs",  DecayModeOldDMs); //Branch for old DMs was changed in UL NanoAODv9 from Tau_idDecayMode to Tau_idDecayModeOldDMs. This on for v9
-//  SetBranch("Tau_idDecayModeNewDMs",  DecayModeNewDMs); //DecayModeNewDMs is a preselection for UL NanoAODv9. This off for v9
+  SetBranch("Tau_idDecayMode",  DecayModeOldDMs); // on for NANOAOD v8
+//  SetBranch("Tau_idDecayModeOldDMs",  DecayModeOldDMs); //Branch for old DMs was changed in UL NanoAODv9 from Tau_idDecayMode to Tau_idDecayModeOldDMs. This on for v9
+  SetBranch("Tau_idDecayModeNewDMs",  DecayModeNewDMs); //DecayModeNewDMs is a preselection for UL NanoAODv9. This off for v9
   SetBranch("Tau_decayMode", decayModeInt);
 
   // ------- Tau-related quantities ---------- //

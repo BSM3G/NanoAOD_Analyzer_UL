@@ -42,8 +42,6 @@ JMatchingDeltaR 0.8
 RemoveOverlapWithBs 1
 BJMatchingDeltaR 0.4
 
-Apply2017EEnoiseVeto false
-
 DiscrByDPhiMet true
 DPhiMetCut 0.7 9999.5
 ########################################
@@ -77,8 +75,6 @@ JMatchingDeltaR 0.8
 RemoveOverlapWithBs 1
 BJMatchingDeltaR 0.4
 
-Apply2017EEnoiseVeto false
-
 DiscrByDPhiMet true
 DPhiMetCut 0.7 9999.5
 ####################################
@@ -104,8 +100,6 @@ RemoveOverlapWithTau1s 1
 RemoveOverlapWithTau2s 1
 Tau1MatchingDeltaR 0.4
 Tau2MatchingDeltaR 0.4
-
-Apply2017EEnoiseVeto false
 
 DiscrByDPhiMet true
 DPhiMetCut 0.7 9999.5
@@ -136,8 +130,6 @@ RemoveOverlapWithTau2s 1
 Tau1MatchingDeltaR 0.4
 Tau2MatchingDeltaR 0.4
 
-Apply2017EEnoiseVeto false
-
 DiscrByDPhiMet true
 DPhiMetCut 0.7 9999.5
 ####################################
@@ -167,8 +159,6 @@ RemoveOverlapWithTau2s 1
 Tau1MatchingDeltaR 0.4
 Tau2MatchingDeltaR 0.4
 
-Apply2017EEnoiseVeto false
-
 DiscrByDPhiMet true
 DPhiMetCut 0.7 9999.5
 ###################################
@@ -189,18 +179,16 @@ Electron1MatchingDeltaR 0.4
 Electron2MatchingDeltaR 0.4
 
 RemoveOverlapWithTau1s 1
-RemoveOverlapWithTau2s 4
+RemoveOverlapWithTau2s 1
 Tau1MatchingDeltaR 0.4
 Tau2MatchingDeltaR 0.4
-
-Apply2017EEnoiseVeto false
 
 ApplyJetBTaggingCSVv2 0 
 ApplyJetBTaggingDeepCSV 1
 ApplyJetBTaggingDeepFlav 0
 
 JetBTaggingWP   medium
-JetBTaggingCut  0.4168
+JetBTaggingCut  0.6001
 MatchBToGen     1
 UseBtagSF       1
 RemoveBJetsFromJets 0
